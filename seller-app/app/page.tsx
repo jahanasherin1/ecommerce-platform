@@ -1,66 +1,229 @@
-import { createClient } from '../utils/supabase/server'
-import { revalidatePath } from 'next/cache'
+'use client';
 
-export default async function SellerDashboard() {
-  const supabase = await createClient();
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { createBrowserClient } from '@supabase/ssr';
 
-  // 1. Fetch existing products from the database
-  const { data: products } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+// --- MOCK DATA (To match your Figma design) ---
+const PERFORMANCE_STATS = [
+  { label: 'Total Sales', value: '$4,280', change: '+12.5%', icon: '💰' },
+  { label: 'Orders', value: '156', change: '+8%', icon: '📦' },
+  { label: 'Revenue', value: '$3,120', change: '+14%', icon: '📈' },
+  { label: 'Visitors', value: '2,840', change: '+5%', icon: '👥' },
+];
 
-  // 2. SERVER ACTION: This function runs securely on the backend when the form is submitted
-  const addProduct = async (formData: FormData) => {
-    'use server'
-    const title = formData.get('title') as string;
-    const price = formData.get('price') as string;
-    const description = formData.get('description') as string;
+const TOP_PRODUCTS = [
+  { name: 'Dry Flower Vase Set', price: '₹900.00', sold: '12 sold', image: 'https://images.unsplash.com/photo-1581783898377-1c85bf937427?q=80&w=200&h=200&auto=format&fit=crop' },
+  { name: 'Rolex Watches For Men', price: '₹4999.00', sold: '3 sold', image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=200&h=200&auto=format&fit=crop' },
+  { name: 'Aesthetic Lamp', price: '₹1200.00', sold: '8 sold', image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=200&h=200&auto=format&fit=crop' },
+];
 
-    const supabase = await createClient();
-    
-    // Insert the new product into Supabase
-    const { error } = await supabase.from('products').insert([
-      { title, price, description }
-    ]);
+const RECENT_CHECKOUTS = [
+  { customer: 'Sarah Miller', amount: '₹120.00', time: '2 mins ago', initial: 'S' },
+  { customer: 'John Doe', amount: '₹850.00', time: '15 mins ago', initial: 'J' },
+  { customer: 'Emma Wilson', amount: '₹2,400.00', time: '1 hour ago', initial: 'E' },
+];
 
-    if (error) console.error("Error adding product:", error.message);
-    
-    // Refresh the page to show the new product
-    revalidatePath('/');
-  }
+export default function SellerDashboard() {
+  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [storeName, setStoreName] = useState('Loading...');
 
-  // 3. The User Interface (UI)
-  return (
-    <main style={{ padding: '50px', maxWidth: '800px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <h1>🏪 Seller Dashboard</h1>
+  useEffect(() => {
+    const fetchStoreName = async () => {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
       
-      {/* FORM TO ADD A PRODUCT */}
-      <div style={{ backgroundColor: '#f4f4f5', padding: '20px', borderRadius: '8px', marginBottom: '40px' }}>
-        <h2>Add a New Product</h2>
-        <form action={addProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <input type="text" name="title" placeholder="Product Name (e.g. iPhone 15)" required style={{ padding: '10px' }} />
-          <input type="number" name="price" placeholder="Price (e.g. 999)" required style={{ padding: '10px' }} />
-          <textarea name="description" placeholder="Product Description..." style={{ padding: '10px', height: '80px' }}></textarea>
-          <button type="submit" style={{ padding: '10px', backgroundColor: '#000', color: '#fff', cursor: 'pointer' }}>
-            Save Product
-          </button>
-        </form>
-      </div>
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('seller_profiles')
+          .select('business_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (data?.business_name) {
+          setStoreName(data.business_name);
+        } else {
+          setStoreName('My Store');
+        }
+      } else {
+        setStoreName('My Store');
+      }
+    };
 
-      {/* LIST OF PRODUCTS ALREADY ADDED */}
-      <div>
-        <h2>Your Products</h2>
-        {products?.length === 0 ? (
-          <p>No products added yet.</p>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {products?.map((product) => (
-              <li key={product.id} style={{ border: '1px solid #ddd', padding: '15px', marginBottom: '10px', borderRadius: '8px' }}>
-                <h3>{product.title} - ${product.price}</h3>
-                <p>{product.description}</p>
-              </li>
+    fetchStoreName();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-900">
+      
+      {/* SIDEBAR (Desktop Navigation) */}
+      <aside className="w-72 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen">
+        <div className="p-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-10 h-10 bg-[#67a769] rounded-xl flex items-center justify-center text-white text-xl">🏠</div>
+            <div>
+              <h1 className="font-bold text-lg leading-tight">{storeName}</h1>
+              <span className="text-[10px] font-bold text-[#67a769] uppercase tracking-widest">Premium Vendor</span>
+            </div>
+          </div>
+
+          <nav className="space-y-2">
+            <Link href="/" className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${activeTab === 'Dashboard' ? 'bg-[#f4fbf4] text-[#67a769]' : 'text-gray-500 hover:bg-gray-50'}`}>
+              <span className="text-xl">📊</span> Dashboard
+            </Link>
+            <Link href="/products" className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${activeTab === 'Products' ? 'bg-[#f4fbf4] text-[#67a769]' : 'text-gray-500 hover:bg-gray-50'}`}>
+              <span className="text-xl">🛍️</span> Products
+            </Link>
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm cursor-pointer transition-all ${activeTab === 'Orders' ? 'bg-[#f4fbf4] text-[#67a769]' : 'text-gray-500 hover:bg-gray-50'}`} onClick={() => setActiveTab('Orders')}>
+              <span className="text-xl">🚚</span> Orders
+            </div>
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm cursor-pointer transition-all ${activeTab === 'Profile' ? 'bg-[#f4fbf4] text-[#67a769]' : 'text-gray-500 hover:bg-gray-50'}`} onClick={() => setActiveTab('Profile')}>
+              <span className="text-xl">👤</span> Profile
+            </div>
+          </nav>
+        </div>
+
+        <div className="mt-auto p-8 border-t border-gray-50">
+          <button className="flex items-center gap-3 text-gray-400 hover:text-red-500 transition-all font-medium text-sm">
+            <span>🚪</span> Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 p-8 overflow-y-auto">
+        
+        {/* HEADER BAR */}
+        <header className="flex justify-between items-center mb-10">
+          <h2 className="text-2xl font-bold">Store Overview</h2>
+          <div className="flex items-center gap-4">
+             <button className="p-3 bg-white rounded-full border border-gray-100 shadow-sm relative">
+                🔔 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+             </button>
+             <Link href="/add-product">
+  <button className="bg-[#67a769] text-white px-6 py-3 rounded-full font-bold text-sm flex items-center gap-2 hover:bg-[#568f58] transition-all shadow-lg shadow-green-100">
+    <span>+</span> Add Product
+  </button>
+</Link>
+          </div>
+        </header>
+
+        {/* WELCOME HERO (From Figma) */}
+        <div className="bg-gradient-to-r from-[#c2e1c5] to-[#e8f5e9] p-10 rounded-[40px] relative overflow-hidden mb-10">
+          <div className="relative z-10 max-w-md">
+            <h3 className="text-3xl font-bold text-gray-800 mb-3">Welcome to your Store Dashboard</h3>
+            <p className="text-gray-600 text-sm leading-relaxed">Start setting up your store to begin selling products to your customers.</p>
+          </div>
+          <div className="absolute right-10 bottom-0 opacity-20 text-[120px]">🚀</div>
+        </div>
+
+        {/* PERFORMANCE OVERVIEW GRID (From Figma) */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+          {PERFORMANCE_STATS.map((stat, i) => (
+            <div key={i} className="bg-white p-6 rounded-[32px] border border-gray-50 shadow-sm">
+               <div className="text-xl mb-3">{stat.icon}</div>
+               <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">{stat.label}</p>
+               <div className="flex items-baseline gap-2 mt-1">
+                 <h4 className="text-2xl font-bold">{stat.value}</h4>
+                 <span className="text-green-500 text-xs font-bold">{stat.change}</span>
+               </div>
+            </div>
+          ))}
+        </div>
+
+        {/* MIDDLE SECTION: PERFORMANCE CHART & RECENT CHECKOUTS */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+          
+          {/* Sales Performance (From Figma) */}
+          <div className="lg:col-span-2 bg-white p-8 rounded-[40px] border border-gray-50 shadow-sm">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="font-bold text-lg">Sales Performance</h3>
+              <select className="bg-gray-50 border-none rounded-lg text-xs font-bold p-2 outline-none">
+                <option>This Week</option>
+                <option>Last Week</option>
+              </select>
+            </div>
+            {/* Mock Chart Visualization */}
+            <div className="flex items-end justify-between h-48 gap-4 px-4">
+              {[40, 70, 45, 90, 65, 30].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-3">
+                  <div 
+                    style={{ height: `${h}%` }} 
+                    className={`w-full rounded-t-xl transition-all duration-500 ${h > 80 ? 'bg-[#67a769]' : 'bg-green-100 hover:bg-green-200'}`}
+                  ></div>
+                  <span className="text-[10px] font-bold text-gray-400">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Checkouts (From Figma) */}
+          <div className="bg-white p-8 rounded-[40px] border border-gray-50 shadow-sm">
+            <h3 className="font-bold text-lg mb-6">Recent Checkouts</h3>
+            <div className="space-y-6">
+              {RECENT_CHECKOUTS.map((order, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#f4fbf4] rounded-full flex items-center justify-center font-bold text-[#67a769] text-sm">
+                      {order.initial}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">{order.customer}</p>
+                      <p className="text-[10px] text-gray-400">{order.time}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-gray-700">{order.amount}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* TOP PERFORMING PRODUCTS (From Figma) */}
+        <div className="bg-white p-8 rounded-[40px] border border-gray-50 shadow-sm">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="font-bold text-lg">Top Performing</h3>
+            <button className="text-[#67a769] text-xs font-bold hover:underline">View All</button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TOP_PRODUCTS.map((product, i) => (
+              <div key={i} className="group cursor-pointer">
+                <div className="relative h-48 w-full rounded-[32px] overflow-hidden mb-4">
+                  <img src={product.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={product.name} />
+                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold">
+                    {product.sold}
+                  </div>
+                </div>
+                <h4 className="font-bold text-sm mb-1">{product.name}</h4>
+                <p className="text-[#67a769] font-bold text-sm">{product.price}</p>
+              </div>
             ))}
-          </ul>
-        )}
-      </div>
-    </main>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  );
+}
+
+// --- SUB-COMPONENTS ---
+function SidebarLink({ icon, label, active, onClick }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-4 px-6 py-4 rounded-[20px] transition-all text-sm font-bold ${
+        active 
+          ? 'bg-[#f4fbf4] text-[#67a769]' 
+          : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+      }`}
+    >
+      <span className="text-lg">{icon}</span>
+      {label}
+    </button>
   );
 }
