@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import Sidebar from '@/components/Sidebar';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -84,26 +85,7 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-900">
       
-      {/* SIDEBAR (Desktop Navigation matching Dashboard) */}
-      <aside className="w-72 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen hidden md:flex">
-        <div className="p-8">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-[#67a769] rounded-xl flex items-center justify-center text-white text-xl">🛍️</div>
-            <div>
-              <h1 className="font-bold text-lg leading-tight">My Products</h1>
-            </div>
-          </div>
-
-          <nav className="space-y-2">
-            <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-gray-50 transition-all font-bold text-sm">
-              <span className="text-xl">📊</span> Dashboard
-            </Link>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#f4fbf4] text-[#67a769] font-bold text-sm">
-              <span className="text-xl">🛍️</span> Products
-            </div>
-          </nav>
-        </div>
-      </aside>
+      <Sidebar />
 
       {/* MAIN CONTENT */}
       <main className="flex-1 overflow-y-auto">
@@ -123,7 +105,7 @@ export default function ProductsPage() {
           </header>
 
           <div className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100">
-            {/* Search Bar matching the design */}
+            {/* Search Bar */}
             <div className="relative mb-6">
               <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
@@ -137,7 +119,7 @@ export default function ProductsPage() {
               />
             </div>
 
-            {/* Filter Pills matching the design */}
+            {/* Filter Pills */}
             <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar">
               {filters.map((filter) => (
                 <button
@@ -162,12 +144,21 @@ export default function ProductsPage() {
                 {filteredProducts.map((product) => (
                   <div key={product.id} className="flex items-center justify-between p-4 rounded-3xl border border-gray-100 hover:border-[#c2e1c5] hover:shadow-sm transition-all group bg-white">
                     <div className="flex items-center gap-5">
-                      <div className="w-20 h-20 bg-gray-100 rounded-2xl overflow-hidden flex-shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <div className="w-20 h-20 bg-gray-50 rounded-2xl overflow-hidden flex-shrink-0 border border-gray-100">
+                        {/* FIX: If no image exists, it shows a generic gray "No Image" box instead of yellow headphones */}
                         <img 
-                          src={product.image_url || 'https://via.placeholder.com/150'} 
+                          src={
+                            (product.images && product.images.length > 0 && product.images[0].startsWith('http')) 
+                              ? product.images[0] 
+                              : (product.image_url && product.image_url.startsWith('http'))
+                                ? product.image_url
+                                : 'https://placehold.co/200x200/f8fafc/94a3b8?text=No+Image'
+                          } 
                           alt={product.name} 
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://placehold.co/200x200/f8fafc/94a3b8?text=No+Image';
+                          }}
                         />
                       </div>
                       <div className="flex flex-col">
@@ -175,7 +166,9 @@ export default function ProductsPage() {
                           {product.name}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="font-bold text-[#67a769] text-sm">₹ {product.price}</span>
+                          <span className="font-bold text-[#67a769] text-sm">
+                            ₹ {product.selling_price || product.price || '0'}
+                          </span>
                           {getBadge(product.stock)}
                         </div>
                         <a href="#" className="flex items-center gap-1 text-[10px] font-bold text-red-400 hover:text-red-500 mt-2 uppercase tracking-widest">

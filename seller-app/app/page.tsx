@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
+import Sidebar from '@/components/Sidebar';
 
 // --- MOCK DATA (To match your Figma design) ---
 const PERFORMANCE_STATS = [
@@ -19,7 +20,6 @@ const RECENT_CHECKOUTS = [
 ];
 
 export default function SellerDashboard() {
-  const [activeTab, setActiveTab] = useState('Dashboard');
   const [storeName, setStoreName] = useState('Loading...');
   const [topProducts, setTopProducts] = useState<any[]>([]);
 
@@ -71,39 +71,7 @@ export default function SellerDashboard() {
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-gray-900">
       
-      {/* SIDEBAR (Desktop Navigation) */}
-      <aside className="w-72 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen">
-        <div className="p-8">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-[#67a769] rounded-xl flex items-center justify-center text-white text-xl">🏠</div>
-            <div>
-              <h1 className="font-bold text-lg leading-tight">{storeName}</h1>
-              <span className="text-[10px] font-bold text-[#67a769] uppercase tracking-widest">Premium Vendor</span>
-            </div>
-          </div>
-
-          <nav className="space-y-2">
-            <Link href="/" className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${activeTab === 'Dashboard' ? 'bg-[#f4fbf4] text-[#67a769]' : 'text-gray-500 hover:bg-gray-50'}`}>
-              <span className="text-xl">📊</span> Dashboard
-            </Link>
-            <Link href="/products" className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${activeTab === 'Products' ? 'bg-[#f4fbf4] text-[#67a769]' : 'text-gray-500 hover:bg-gray-50'}`}>
-              <span className="text-xl">🛍️</span> Products
-            </Link>
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm cursor-pointer transition-all ${activeTab === 'Orders' ? 'bg-[#f4fbf4] text-[#67a769]' : 'text-gray-500 hover:bg-gray-50'}`} onClick={() => setActiveTab('Orders')}>
-              <span className="text-xl">🚚</span> Orders
-            </div>
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm cursor-pointer transition-all ${activeTab === 'Profile' ? 'bg-[#f4fbf4] text-[#67a769]' : 'text-gray-500 hover:bg-gray-50'}`} onClick={() => setActiveTab('Profile')}>
-              <span className="text-xl">👤</span> Profile
-            </div>
-          </nav>
-        </div>
-
-        <div className="mt-auto p-8 border-t border-gray-50">
-          <button className="flex items-center gap-3 text-gray-400 hover:text-red-500 transition-all font-medium text-sm">
-            <span>🚪</span> Logout
-          </button>
-        </div>
-      </aside>
+      <Sidebar />
 
       {/* MAIN CONTENT */}
       <main className="flex-1 p-8 overflow-y-auto">

@@ -45,9 +45,9 @@ export default async function Storefront() {
           
           <div className="hidden md:flex items-center gap-8 font-semibold text-sm text-gray-600">
             <Link href="/" className="text-[#67a769]">Home</Link>
-            <Link href="#" className="hover:text-gray-900 transition-colors">Shop</Link>
-            <Link href="#" className="hover:text-gray-900 transition-colors">Categories</Link>
-            <Link href="#" className="hover:text-gray-900 transition-colors">About</Link>
+            <Link href="#products" className="hover:text-gray-900 transition-colors">Shop</Link>
+            <Link href="#products" className="hover:text-gray-900 transition-colors">Categories</Link>
+            <Link href="#footer" className="hover:text-gray-900 transition-colors">About</Link>
           </div>
 
           <div className="flex items-center gap-4">
@@ -91,9 +91,11 @@ export default async function Storefront() {
             <p className="text-gray-600 mb-8 leading-relaxed">
               Shop our latest arrivals with guaranteed quality, fast shipping, and 24/7 customer support.
             </p>
-            <button className="bg-[#67a769] hover:bg-[#568f58] text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-green-100 transition-all transform hover:scale-105">
-              Shop Now
-            </button>
+            <Link href="#products">
+              <button className="bg-[#67a769] hover:bg-[#568f58] text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-green-100 transition-all transform hover:scale-105">
+                Shop Now
+              </button>
+            </Link>
           </div>
           {/* Decorative Elements */}
           <div className="absolute right-10 bottom-0 opacity-10 text-[200px] leading-none pointer-events-none">✨</div>
@@ -109,15 +111,15 @@ export default async function Storefront() {
       </div>
 
       {/* PRODUCTS GRID */}
-      <div className="max-w-7xl mx-auto px-6 py-12 mb-20">
+      <div id="products" className="max-w-7xl mx-auto px-6 py-12 mb-20">
         <div className="flex justify-between items-end mb-10">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Products</h2>
             <p className="text-gray-500">Handpicked items just for you.</p>
           </div>
-          <button className="hidden md:block text-[#67a769] font-bold hover:underline">
+          <Link href="#products" className="hidden md:block text-[#67a769] font-bold hover:underline">
             View All Products &rarr;
-          </button>
+          </Link>
         </div>
 
         {!products || products.length === 0 ? (
@@ -139,7 +141,7 @@ export default async function Storefront() {
                 <div className="relative w-full aspect-square bg-gray-50 rounded-2xl overflow-hidden mb-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
-                    src={product.image_url || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80'} 
+                    src={(product.images && product.images.length > 0) ? product.images[0] : 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80'} 
                     alt={product.name} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -154,7 +156,7 @@ export default async function Storefront() {
                 {/* Product Details */}
                 <div className="flex-1 flex flex-col">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    {product.primaryCategory || 'General'}
+                    {product.category || 'General'}
                   </span>
                   <h3 className="font-bold text-gray-800 leading-tight mb-2 line-clamp-2">
                     {product.name}
@@ -162,7 +164,7 @@ export default async function Storefront() {
                   
                   <div className="mt-auto pt-4 flex items-center justify-between">
                     <span className="font-bold text-lg text-[#67a769]">
-                      ₹{product.price}
+                      ₹{product.selling_price || product.price || 0}
                     </span>
                     <button 
                       disabled={product.stock <= 0}
@@ -182,7 +184,7 @@ export default async function Storefront() {
       </div>
 
       {/* FOOTER */}
-      <footer className="bg-white border-t border-gray-100 py-10 mt-auto">
+      <footer id="footer" className="bg-white border-t border-gray-100 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm font-medium">
           &copy; {new Date().getFullYear()} {storeName}. All rights reserved.
         </div>
