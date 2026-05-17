@@ -31,19 +31,9 @@ export default function ProductsPage() {
 
     if (error) {
       console.error('Error fetching products:', error);
-      // Fallback/Mock data if table doesn't exist yet so UI still works based on design
-      const defaultMockData = [
-        { id: 1, name: 'AeroPeak Smartwatch Series 5', price: 2499, stock: 130, status: 'Active', image_url: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&q=80&w=200&h=200' },
-        { id: 2, name: 'Studio Pro Noise Cancelling', price: 4999, stock: 10, status: 'Low Stock', image_url: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=200&h=200' },
-        { id: 3, name: 'Lumina X1 Retro Camera', price: 50999, stock: 100, status: 'Active', image_url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=200&h=200' },
-        { id: 4, name: 'Sprint Elite V2 Running Shoes', price: 25500, stock: 0, status: 'Out of Stock', image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=200&h=200' },
-      ];
-      
-      const localProducts = JSON.parse(localStorage.getItem('mock_products') || '[]');
-      setProducts([...localProducts, ...defaultMockData]);
+      setProducts([]);
     } else {
-      const localProducts = JSON.parse(localStorage.getItem('mock_products') || '[]');
-      setProducts([...localProducts, ...(data || [])]);
+      setProducts(data || []);
     }
     setLoading(false);
   };
@@ -76,13 +66,13 @@ export default function ProductsPage() {
     return true;
   });
 
-  const handleDelete = (id: any) => {
+  const handleDelete = async (id: any) => {
+    // Delete from Supabase
+    await supabase.from('products').delete().eq('id', id);
+
+    // Update UI
     const updated = products.filter(p => p.id !== id);
     setProducts(updated);
-    // Also remove from local storage if it was a custom product
-    const localProducts = JSON.parse(localStorage.getItem('mock_products') || '[]');
-    const filteredLocal = localProducts.filter((p: any) => p.id !== id);
-    localStorage.setItem('mock_products', JSON.stringify(filteredLocal));
   };
 
   const handleEdit = (product: any) => {

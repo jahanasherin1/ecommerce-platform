@@ -12,12 +12,6 @@ const PERFORMANCE_STATS = [
   { label: 'Visitors', value: '2,840', change: '+5%', icon: '👥' },
 ];
 
-const TOP_PRODUCTS = [
-  { name: 'Dry Flower Vase Set', price: '₹900.00', sold: '12 sold', image: 'https://images.unsplash.com/photo-1581783898377-1c85bf937427?q=80&w=200&h=200&auto=format&fit=crop' },
-  { name: 'Rolex Watches For Men', price: '₹4999.00', sold: '3 sold', image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=200&h=200&auto=format&fit=crop' },
-  { name: 'Aesthetic Lamp', price: '₹1200.00', sold: '8 sold', image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=200&h=200&auto=format&fit=crop' },
-];
-
 const RECENT_CHECKOUTS = [
   { customer: 'Sarah Miller', amount: '₹120.00', time: '2 mins ago', initial: 'S' },
   { customer: 'John Doe', amount: '₹850.00', time: '15 mins ago', initial: 'J' },
@@ -27,14 +21,16 @@ const RECENT_CHECKOUTS = [
 export default function SellerDashboard() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [storeName, setStoreName] = useState('Loading...');
+  const [topProducts, setTopProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchStoreName = async () => {
+    const fetchStoreData = async () => {
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
       
+      // Fetch user and store name
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
@@ -51,9 +47,25 @@ export default function SellerDashboard() {
       } else {
         setStoreName('My Store');
       }
+
+      // Fetch top products (let's pick the latest 3 active products as "top" for now)
+      const { data: products } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (products) {
+        setTopProducts(products.map(p => ({
+          name: p.name,
+          price: `₹${p.price.toFixed(2)}`,
+          sold: `${Math.floor(Math.random() * 20)} sold`, // Mocking sold count as we lack an orders table
+          image: p.image_url || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80'
+        })));
+      }
     };
 
-    fetchStoreName();
+    fetchStoreData();
   }, []);
 
   return (
@@ -191,18 +203,22 @@ export default function SellerDashboard() {
             <button className="text-[#67a769] text-xs font-bold hover:underline">View All</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TOP_PRODUCTS.map((product, i) => (
-              <div key={i} className="group cursor-pointer">
-                <div className="relative h-48 w-full rounded-[32px] overflow-hidden mb-4">
-                  <img src={product.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={product.name} />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold">
-                    {product.sold}
+            {topProducts.length > 0 ? (
+              topProducts.map((product, i) => (
+                <div key={i} className="group cursor-pointer">
+                  <div className="relative h-48 w-full rounded-[32px] overflow-hidden mb-4">
+                    <img src={product.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={product.name} />
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold">
+                      {product.sold}
+                    </div>
                   </div>
+                  <h4 className="font-bold text-gray-800 line-clamp-1">{product.name}</h4>
+                  <p className="text-[#67a769] font-bold text-sm mt-1">{product.price}</p>
                 </div>
-                <h4 className="font-bold text-sm mb-1">{product.name}</h4>
-                <p className="text-[#67a769] font-bold text-sm">{product.price}</p>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 col-span-3 text-sm">No products found.</p>
+            )}
           </div>
         </div>
 
